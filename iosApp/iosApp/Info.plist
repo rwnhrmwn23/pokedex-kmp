@@ -4,5 +4,9 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>baseUrl</key>
+    <string>https://pokeapi.co/api/v2</string>
+    <key>profileImageUrl</key>
+    <string>https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork</string>
 </dict>
 </plist>

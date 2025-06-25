@@ -33,6 +33,11 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+
+            implementation(libs.ktor.client.okhttp)
+
+            implementation(libs.koin.android)
+            implementation(libs.koin.androidx.compose)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -43,9 +48,23 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            api(libs.ktor.serialization.kotlinx.json)
+            api(libs.ktor.client.content.negotiation)
+
+            api(libs.koin.core)
+            implementation(libs.koin.compose.viewmodel)
+
+            projects.apply {
+                implementation(domain)
+                implementation(data)
+            }
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.ios)
         }
     }
 }
