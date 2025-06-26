@@ -1,4 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -55,6 +54,8 @@ kotlin {
             api(libs.koin.core)
             implementation(libs.koin.compose.viewmodel)
 
+            implementation(libs.kamel.image.default)
+
             projects.apply {
                 implementation(domain)
                 implementation(data)
@@ -70,11 +71,11 @@ kotlin {
 }
 
 android {
-    namespace = "org.example.project"
+    namespace = "com.pokedex.onedev"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "org.example.project"
+        applicationId = "com.pokedex.onedev"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

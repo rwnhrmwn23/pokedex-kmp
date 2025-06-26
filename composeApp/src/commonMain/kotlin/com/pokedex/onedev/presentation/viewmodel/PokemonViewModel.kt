@@ -3,47 +3,65 @@ package com.pokedex.onedev.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.onedev.pokedex.domain.repository.PokemonRepository
-import com.pokedex.onedev.presentation.intent.PokemonIntent
-import com.pokedex.onedev.presentation.state.PokemonState
+import com.pokedex.onedev.presentation.state.PokemonListUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class PokemonViewModel(
     private val repository: PokemonRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<PokemonState>(PokemonState.Idle)
-    val state: StateFlow<PokemonState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(PokemonListUiState())
+    val state: StateFlow<PokemonListUiState> = _state.asStateFlow()
 
-    fun dispatch(intent: PokemonIntent) {
-        when (intent) {
-            is PokemonIntent.LoadPokemonList -> getList()
-            is PokemonIntent.LoadPokemonDetail -> getDetail(intent.id)
-        }
+    private var currentOffset = 0
+    private val pageSize = 20
+    private var isFetching = false
+
+    init {
+        loadInitial()
     }
 
-    private fun getList() {
+    private fun loadInitial() {
         viewModelScope.launch {
-            _state.value = PokemonState.Loading
+            _state.update { it.copy(isLoading = true, error = null) }
             try {
-                val list = repository.getPokemonList(offset = 0, limit = 20)
-                _state.value = PokemonState.ListLoaded(list)
+                val list = repository.getPokemonList(currentOffset, pageSize)
+                _state.update {
+                    it.copy(
+                        pokemonList = list,
+                        isLoading = false,
+                        error = null
+                    )
+                }
+                currentOffset += pageSize
             } catch (e: Exception) {
-                _state.value = PokemonState.Error(e.message ?: "Unknown Error!")
+                _state.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
 
-    private fun getDetail(id: Int) {
+    fun loadMore() {
+        if (isFetching) return
+        isFetching = true
         viewModelScope.launch {
-            _state.value = PokemonState.Loading
+            _state.update { it.copy(isLoadingMore = true) }
             try {
-                val detail = repository.getPokemonDetail(id)
-                _state.value = PokemonState.DetailLoaded(detail)
+                val list = repository.getPokemonList(currentOffset, pageSize)
+                _state.update {
+                    it.copy(
+                        pokemonList = it.pokemonList + list,
+                        isLoadingMore = false
+                    )
+                }
+                currentOffset += pageSize
             } catch (e: Exception) {
-                _state.value = PokemonState.Error(e.message ?: "Unknown Error!")
+                _state.update { it.copy(isLoadingMore = false) }
+            } finally {
+                isFetching = false
             }
         }
     }
