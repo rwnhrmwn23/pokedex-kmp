@@ -5,5 +5,5 @@ import com.onedev.pokedex.domain.model.PokemonDetail
 
 interface PokemonRepository {
     suspend fun getPokemonList(offset: Int, limit: Int): List<Pokemon>
-    suspend fun getPokemonDetail(id: Int): PokemonDetail
+    suspend fun getPokemonDetail(pokemonName: String): PokemonDetail
 }

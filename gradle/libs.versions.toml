@@ -13,6 +13,7 @@ androidx-testExt = "1.2.1"
 composeMultiplatform = "1.8.1"
 junit = "4.13.2"
 kotlin = "2.1.21"
+navigationCompose = "2.9.0-beta03"
 
 ktor = "3.2.0"
 koin = "4.0.0"
@@ -47,6 +48,8 @@ koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = 
 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kamel-image-default = { module = "media.kamel:kamel-image-default", version.ref = "kamel" }
+
+navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

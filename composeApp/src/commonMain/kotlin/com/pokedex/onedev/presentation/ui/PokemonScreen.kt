@@ -61,29 +61,28 @@ import pokedex.composeapp.generated.resources.ic_search
 @Composable
 fun PokemonListScreen(
     viewModel: PokemonViewModel,
-    onClickItem: (Int) -> Unit = {}
+    onClickItem: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyGridState()
 
-    LaunchedEffect(Unit) {
-        viewModel.dispatch(PokemonIntent.LoadInitial)
+    LaunchedEffect(viewModel) {
+        if (viewModel.state.value.pokemonList.isEmpty()) {
+            viewModel.dispatch(PokemonIntent.LoadInitial)
+        }
     }
 
     LaunchedEffect(listState) {
-        snapshotFlow {
-            val layoutInfo = listState.layoutInfo
+        snapshotFlow { listState.layoutInfo }
+            .collect { layoutInfo ->
+                val totalItemsCount = layoutInfo.totalItemsCount
+                val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
 
-            val scrollOffset = listState.firstVisibleItemScrollOffset
-            val maxOffsetEstimate = layoutInfo.viewportEndOffset
-
-            Pair(scrollOffset, maxOffsetEstimate)
-        }.collect { (scrollOffset, maxOffset) ->
-            val isNearBottom = scrollOffset >= maxOffset - 300
-            if (isNearBottom && !state.isLoadingMore && !state.isLoading) {
-                viewModel.dispatch(PokemonIntent.LoadMorePokemon)
+                val isAtEnd = lastVisibleItemIndex >= totalItemsCount - 3
+                if (isAtEnd && !state.isLoading && !state.isLoadingMore) {
+                    viewModel.dispatch(PokemonIntent.LoadMorePokemon)
+                }
             }
-        }
     }
 
     PokemonScreen(
@@ -177,7 +176,7 @@ fun SearchBar(
 fun PokemonScreen(
     state: PokemonListUiState,
     listState: LazyGridState,
-    onClickItem: (Int) -> Unit = {},
+    onClickItem: (String) -> Unit = {},
     onSearch: (String) -> Unit
 ) {
     var search by remember { mutableStateOf(state.searchQuery) }
@@ -249,7 +248,7 @@ fun PokemonScreen(
                         items(pokemons) { pokemon ->
                             PokemonCard(
                                 pokemon = pokemon,
-                                onClick = { pokemon.id?.let { onClickItem(it) } }
+                                onClick = { pokemon.name?.let { onClickItem(it) } }
                             )
                         }
 

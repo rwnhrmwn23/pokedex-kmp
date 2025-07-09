@@ -17,7 +17,7 @@ class PokemonApi(private val client: HttpClient) {
         }.body()
     }
 
-    suspend fun getPokemonDetail(id: Int): PokemonDetailResponse {
-        return client.get("${getBaseUrl()}/pokemon/$id").body()
+    suspend fun getPokemonDetail(pokemonName: String): PokemonDetailResponse {
+        return client.get("${getBaseUrl()}/pokemon/$pokemonName").body()
     }
 }

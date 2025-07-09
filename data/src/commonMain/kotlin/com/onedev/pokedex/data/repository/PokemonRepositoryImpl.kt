@@ -22,8 +22,8 @@ class PokemonRepositoryImpl(
         } ?: emptyList()
     }
 
-    override suspend fun getPokemonDetail(id: Int): PokemonDetail {
-        val response = api.getPokemonDetail(id)
+    override suspend fun getPokemonDetail(pokemonName: String): PokemonDetail {
+        val response = api.getPokemonDetail(pokemonName)
         return PokemonDetail(
             id = response.id,
             name = response.name?.replaceFirstChar { it.uppercaseChar() },

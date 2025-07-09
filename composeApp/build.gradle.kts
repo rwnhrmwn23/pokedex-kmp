@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    id(libs.plugins.kotlinxSerialization.get().pluginId)
 }
 
 kotlin {
@@ -48,13 +49,14 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtimeCompose)
 
-            api(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.ktor.serialization.kotlinx.json)
             api(libs.ktor.client.content.negotiation)
 
             api(libs.koin.core)
             implementation(libs.koin.compose.viewmodel)
 
             implementation(libs.kamel.image.default)
+            implementation(libs.navigation.compose)
 
             projects.apply {
                 implementation(domain)
