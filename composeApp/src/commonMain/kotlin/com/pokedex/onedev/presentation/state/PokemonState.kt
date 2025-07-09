@@ -4,7 +4,9 @@ import com.onedev.pokedex.domain.model.Pokemon
 
 data class PokemonListUiState(
     val pokemonList: List<Pokemon> = emptyList(),
+    val filteredList: List<Pokemon> = emptyList(),
     val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
     val error: String? = null,
-    val isLoadingMore: Boolean = false
+    val searchQuery: String = ""
 )

@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onedev.pokedex.domain.model.Pokemon
+import com.pokedex.onedev.presentation.intent.PokemonIntent
 import com.pokedex.onedev.presentation.state.PokemonListUiState
 import com.pokedex.onedev.presentation.viewmodel.PokemonViewModel
 import io.kamel.image.KamelImage
@@ -65,51 +66,34 @@ fun PokemonListScreen(
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyGridState()
 
-    LaunchedEffect(listState) {
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
-            .collect { index ->
-                val total = listState.layoutInfo.totalItemsCount
-                if (index != null && index >= total - 1 && !state.isLoadingMore && !state.isLoading) {
-                    viewModel.loadMore()
-                }
-            }
+    LaunchedEffect(Unit) {
+        viewModel.dispatch(PokemonIntent.LoadInitial)
     }
 
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFDC0A2D))
-    ) {
-        when {
-            state.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Color(0xFFDC0A2D))
-                }
-            }
+            val scrollOffset = listState.firstVisibleItemScrollOffset
+            val maxOffsetEstimate = layoutInfo.viewportEndOffset
 
-            state.error != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Error: ${state.error}", color = Color.Red)
-                }
-            }
-
-            else -> {
-                PokemonScreen(
-                    state = state,
-                    listState = listState,
-                    onClickItem = onClickItem
-                )
+            Pair(scrollOffset, maxOffsetEstimate)
+        }.collect { (scrollOffset, maxOffset) ->
+            val isNearBottom = scrollOffset >= maxOffset - 300
+            if (isNearBottom && !state.isLoadingMore && !state.isLoading) {
+                viewModel.dispatch(PokemonIntent.LoadMorePokemon)
             }
         }
     }
+
+    PokemonScreen(
+        state = state,
+        listState = listState,
+        onClickItem = onClickItem,
+        onSearch = { query -> viewModel.dispatch(PokemonIntent.Search(query)) }
+    )
 }
+
 
 @Composable
 fun SearchBar(
@@ -193,9 +177,11 @@ fun SearchBar(
 fun PokemonScreen(
     state: PokemonListUiState,
     listState: LazyGridState,
-    onClickItem: (Int) -> Unit = {}
+    onClickItem: (Int) -> Unit = {},
+    onSearch: (String) -> Unit
 ) {
-    var search by remember { mutableStateOf("") }
+    var search by remember { mutableStateOf(state.searchQuery) }
+    val pokemons = state.filteredList.ifEmpty { state.pokemonList }
 
     Column(
         modifier = Modifier
@@ -204,7 +190,7 @@ fun PokemonScreen(
     ) {
         Row(
             modifier = Modifier
-                .padding(top = 36.dp, start = 16.dp, end = 16.dp),
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
@@ -220,38 +206,66 @@ fun PokemonScreen(
                 color = Color.White
             )
         }
+
         Spacer(modifier = Modifier.height(12.dp))
+
         SearchBar(
             text = search,
-            onTextChange = { search = it },
+            onTextChange = {
+                search = it
+                onSearch(it)
+            },
             onClickHashtag = { }
         )
-        Spacer(modifier = Modifier.height(24.dp))
-        Box(
-            modifier = Modifier
-                .padding(5.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFFFFFFF)),
-        ) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                state = listState,
-                contentPadding = PaddingValues(4.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(state.pokemonList) { pokemon ->
-                    PokemonCard(
-                        pokemon = pokemon,
-                        onClick = { pokemon.id?.let { onClickItem(it) } })
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        when {
+            state.isLoading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color.White)
                 }
-                if (state.isLoadingMore) {
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        Spacer(modifier = Modifier.height(64.dp))
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color(0xFFDC0A2D))
+            }
+
+            state.error != null -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Error: ${state.error}", color = Color.Red)
+                }
+            }
+
+            else -> {
+                Box(
+                    modifier = Modifier
+                        .padding(5.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFFFFFFF)),
+                ) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        state = listState,
+                        contentPadding = PaddingValues(4.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(pokemons) { pokemon ->
+                            PokemonCard(
+                                pokemon = pokemon,
+                                onClick = { pokemon.id?.let { onClickItem(it) } }
+                            )
+                        }
+
+                        if (state.isLoadingMore) {
+                            item(span = { GridItemSpan(maxLineSpan) }) {
+                                Spacer(modifier = Modifier.height(64.dp))
+                                Box(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = Color(0xFFDC0A2D)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
