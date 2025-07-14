@@ -33,7 +33,8 @@ fun AppNavHost(
 
             PokemonDetailScreenRoute(
                 pokemonName = args.name,
-                viewModel = pokemonDetailViewModel
+                viewModel = pokemonDetailViewModel,
+                navController = navController
             )
         }
     }

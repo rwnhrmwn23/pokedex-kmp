@@ -29,6 +29,9 @@ kotlin {
     }
     
     sourceSets {
+        val commonMain by getting {
+            resources.srcDir("src/commonMain/composeResources")
+        }
         
         androidMain.dependencies {
             implementation(compose.preview)

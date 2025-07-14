@@ -49,9 +49,11 @@ import androidx.compose.ui.unit.sp
 import com.onedev.pokedex.domain.model.Pokemon
 import com.pokedex.onedev.presentation.intent.PokemonIntent
 import com.pokedex.onedev.presentation.state.PokemonListUiState
+import com.pokedex.onedev.presentation.utils.formatId
 import com.pokedex.onedev.presentation.viewmodel.PokemonViewModel
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.compose.resources.painterResource
 import pokedex.composeapp.generated.resources.Res
 import pokedex.composeapp.generated.resources.ic_hashtag
@@ -73,12 +75,11 @@ fun PokemonListScreen(
     }
 
     LaunchedEffect(listState) {
-        snapshotFlow { listState.layoutInfo }
-            .collect { layoutInfo ->
-                val totalItemsCount = layoutInfo.totalItemsCount
-                val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-
-                val isAtEnd = lastVisibleItemIndex >= totalItemsCount - 3
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .distinctUntilChanged()
+            .collect { lastVisibleItemIndex ->
+                val totalItemsCount = listState.layoutInfo.totalItemsCount
+                val isAtEnd = lastVisibleItemIndex != null && lastVisibleItemIndex >= totalItemsCount - 3
                 if (isAtEnd && !state.isLoading && !state.isLoadingMore) {
                     viewModel.dispatch(PokemonIntent.LoadMorePokemon)
                 }
@@ -172,6 +173,70 @@ fun SearchBar(
     }
 }
 
+
+@Composable
+fun PokemonCard(pokemon: Pokemon, onClick: () -> Unit) {
+    val painterResource = asyncPainterResource(pokemon.imageUrl.orEmpty())
+
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+            .padding(6.dp)
+            .fillMaxWidth()
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Box(
+            modifier = Modifier
+                .height(160.dp)
+                .fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.4f)
+                    .align(Alignment.BottomCenter)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFE2E2E2))
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 8.dp, end = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Text(
+                        text = formatId(pokemon.id),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Gray
+                    )
+                }
+                KamelImage(
+                    resource = { painterResource },
+                    contentDescription = pokemon.name,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .padding(4.dp),
+                    contentScale = ContentScale.Fit
+                )
+                Text(
+                    text = pokemon.name ?: "-",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    color = Color.Black
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun PokemonScreen(
     state: PokemonListUiState,
@@ -187,6 +252,8 @@ fun PokemonScreen(
             .fillMaxSize()
             .background(Color(0xFFDC0A2D))
     ) {
+        Spacer(modifier = Modifier.height(24.dp))
+
         Row(
             modifier = Modifier
                 .padding(top = 16.dp, start = 16.dp, end = 16.dp),
@@ -268,69 +335,6 @@ fun PokemonScreen(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun PokemonCard(pokemon: Pokemon, onClick: () -> Unit) {
-    val painterResource = asyncPainterResource(pokemon.imageUrl.orEmpty())
-
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .padding(6.dp)
-            .fillMaxWidth()
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Box(
-            modifier = Modifier
-                .height(160.dp)
-                .fillMaxWidth()
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.4f)
-                    .align(Alignment.BottomCenter)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFE2E2E2))
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 8.dp, end = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Text(
-                        text = "#${pokemon.id?.toString()?.padStart(3, '0') ?: "000"}",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Gray
-                    )
-                }
-                KamelImage(
-                    resource = { painterResource },
-                    contentDescription = pokemon.name,
-                    modifier = Modifier
-                        .size(100.dp)
-                        .padding(4.dp),
-                    contentScale = ContentScale.Fit
-                )
-                Text(
-                    text = pokemon.name ?: "-",
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
-                    color = Color.Black
-                )
             }
         }
     }

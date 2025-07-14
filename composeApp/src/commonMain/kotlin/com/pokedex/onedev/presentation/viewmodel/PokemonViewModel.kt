@@ -56,9 +56,9 @@ class PokemonViewModel(
             _state.update { it.copy(isLoadingMore = true) }
             try {
                 val list = repository.getPokemonList(currentOffset, pageSize)
-                _state.update {
-                    it.copy(
-                        pokemonList = it.pokemonList + list,
+                _state.update { pokemon ->
+                    pokemon.copy(
+                        pokemonList = (pokemon.pokemonList + list).distinctBy { it.name },
                         isLoadingMore = false
                     )
                 }
